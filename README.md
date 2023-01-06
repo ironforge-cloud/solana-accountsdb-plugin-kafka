@@ -1,5 +1,7 @@
 # Solana AccountsDB Plugin for Kafka
 
+> This codebase was taking from the [Blockdaemon/solana-accountsdb-plugin-kafka](https://github.com/Blockdaemon/solana-accountsdb-plugin-kafka) repository
+
 Kafka publisher for use with Solana's [plugin framework](https://docs.solana.com/developing/plugins/geyser-plugins).
 
 ## Installation
@@ -48,9 +50,7 @@ Config is specified via the plugin's JSON config file.
   ],
   "program_allowlist_url": "https://example.com/program_allowlist.txt",
   "program_allowlist_expiry_sec": 5,
-  "program_allowlist": [
-    "11111111111111111111111111111111"
-  ]
+  "program_allowlist": ["11111111111111111111111111111111"]
 }
 ```
 
@@ -86,5 +86,6 @@ This can happen when Kafka brokers are too slow or the connection to Kafka fails
 Therefor it is crucial to choose a sufficiently large buffer.
 
 The buffer size can be controlled using `librdkafka` config options, including:
+
 - `queue.buffering.max.messages`: Maximum number of messages allowed on the producer queue.
 - `queue.buffering.max.kbytes`: Maximum total message size sum allowed on the producer queue.
