@@ -210,16 +210,14 @@ impl Allowlist {
             Err(ureq::Error::Status(code, _response)) => {
                 return Err(PluginError::Custom(Box::new(
                     simple_error::SimpleError::new(format!(
-                        "Failed to fetch allowlist from remote server: status {}",
-                        code
+                        "Failed to fetch allowlist from remote server: status {code}"
                     )),
                 )));
             }
             Err(e) => {
                 return Err(PluginError::Custom(Box::new(
                     simple_error::SimpleError::new(format!(
-                        "Failed to fetch allowlist from remote server: status {}",
-                        e
+                        "Failed to fetch allowlist from remote server: status {e}"
                     )),
                 )));
             }
@@ -467,7 +465,7 @@ mod tests {
                 .with_body("{\"programAllowlist\":[]}")
                 .create();
             let last_updated = allowlist.get_last_updated();
-            println!("last_updated: {:?}", last_updated);
+            println!("last_updated: {last_updated:?}");
             allowlist.update_from_http().unwrap();
             assert_ne!(allowlist.get_last_updated(), last_updated);
             assert_eq!(allowlist.len(), 0);
