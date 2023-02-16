@@ -16,17 +16,16 @@ use solana_geyser_plugin_interface::geyser_plugin_interface::{
     ReplicaAccountInfoV2, ReplicaTransactionInfo, ReplicaTransactionInfoV2,
 };
 
-use {
-    crate::*,
-    log::info,
-    rdkafka::util::get_rdkafka_version,
-    simple_error::simple_error,
-    solana_geyser_plugin_interface::geyser_plugin_interface::{
-        GeyserPlugin, GeyserPluginError as PluginError, ReplicaAccountInfoVersions,
-        ReplicaTransactionInfoVersions, Result as PluginResult, SlotStatus as PluginSlotStatus,
-    },
-    std::fmt::{Debug, Formatter},
+use crate::*;
+use log::info;
+use rdkafka::util::get_rdkafka_version;
+use simple_error::simple_error;
+use solana_geyser_plugin_interface::geyser_plugin_interface::{
+    GeyserPlugin, GeyserPluginError as PluginError, ReplicaAccountInfoVersions,
+    ReplicaTransactionInfoVersions, Result as PluginResult,
+    SlotStatus as PluginSlotStatus,
 };
+use std::fmt::{Debug, Formatter};
 
 #[derive(Default)]
 pub struct KafkaPlugin {
@@ -121,9 +120,9 @@ impl GeyserPlugin for KafkaPlugin {
         };
 
         let publisher = self.unwrap_publisher();
-        publisher
-            .update_account(event)
-            .map_err(|e| PluginError::AccountsUpdateError { msg: e.to_string() })
+        publisher.update_account(event).map_err(|e| {
+            PluginError::AccountsUpdateError { msg: e.to_string() }
+        })
     }
 
     fn update_slot_status(
@@ -143,9 +142,9 @@ impl GeyserPlugin for KafkaPlugin {
             status: SlotStatus::from(status).into(),
         };
 
-        publisher
-            .update_slot_status(event)
-            .map_err(|e| PluginError::AccountsUpdateError { msg: e.to_string() })
+        publisher.update_slot_status(event).map_err(|e| {
+            PluginError::AccountsUpdateError { msg: e.to_string() }
+        })
     }
 
     fn notify_transaction(
@@ -160,9 +159,9 @@ impl GeyserPlugin for KafkaPlugin {
 
         let event = Self::build_transaction_event(slot, transaction);
 
-        publisher
-            .update_transaction(event)
-            .map_err(|e| PluginError::TransactionUpdateError { msg: e.to_string() })
+        publisher.update_transaction(event).map_err(|e| {
+            PluginError::TransactionUpdateError { msg: e.to_string() }
+        })
     }
 
     fn account_data_notifications_enabled(&self) -> bool {
@@ -187,9 +186,13 @@ impl KafkaPlugin {
         self.filter.as_ref().expect("filter is unavailable")
     }
 
-    fn unwrap_update_account(account: ReplicaAccountInfoVersions) -> &ReplicaAccountInfoV2 {
+    fn unwrap_update_account(
+        account: ReplicaAccountInfoVersions,
+    ) -> &ReplicaAccountInfoV2 {
         match account {
-            ReplicaAccountInfoVersions::V0_0_1(_info) => panic!("only v0.0.2 is supported"),
+            ReplicaAccountInfoVersions::V0_0_1(_info) => {
+                panic!("only v0.0.2 is supported")
+            }
             ReplicaAccountInfoVersions::V0_0_2(info) => info,
         }
     }
@@ -199,16 +202,26 @@ impl KafkaPlugin {
     ) -> CompiledInstruction {
         CompiledInstruction {
             program_id_index: ix.program_id_index as u32,
-            accounts: ix.clone().accounts.into_iter().map(|v| v as u32).collect(),
+            accounts: ix
+                .clone()
+                .accounts
+                .into_iter()
+                .map(|v| v as u32)
+                .collect(),
             data: ix.data.clone(),
         }
     }
 
-    fn build_message_header(header: &solana_program::message::MessageHeader) -> MessageHeader {
+    fn build_message_header(
+        header: &solana_program::message::MessageHeader,
+    ) -> MessageHeader {
         MessageHeader {
             num_required_signatures: header.num_required_signatures as u32,
-            num_readonly_signed_accounts: header.num_readonly_signed_accounts as u32,
-            num_readonly_unsigned_accounts: header.num_readonly_unsigned_accounts as u32,
+            num_readonly_signed_accounts: header.num_readonly_signed_accounts
+                as u32,
+            num_readonly_unsigned_accounts: header
+                .num_readonly_unsigned_accounts
+                as u32,
         }
     }
 
@@ -216,11 +229,18 @@ impl KafkaPlugin {
         transaction_token_account_balance: solana_transaction_status::TransactionTokenBalance,
     ) -> TransactionTokenBalance {
         TransactionTokenBalance {
-            account_index: transaction_token_account_balance.account_index as u32,
+            account_index: transaction_token_account_balance.account_index
+                as u32,
             ui_token_account: Some(UiTokenAmount {
-                ui_amount: transaction_token_account_balance.ui_token_amount.ui_amount,
-                decimals: transaction_token_account_balance.ui_token_amount.decimals as u32,
-                amount: transaction_token_account_balance.ui_token_amount.amount,
+                ui_amount: transaction_token_account_balance
+                    .ui_token_amount
+                    .ui_amount,
+                decimals: transaction_token_account_balance
+                    .ui_token_amount
+                    .decimals as u32,
+                amount: transaction_token_account_balance
+                    .ui_token_amount
+                    .amount,
                 ui_amount_string: transaction_token_account_balance
                     .ui_token_amount
                     .ui_amount_string,
@@ -237,10 +257,10 @@ impl KafkaPlugin {
         match transaction {
             ReplicaTransactionInfoVersions::V0_0_1(transaction) => {
                 Self::build_transaction_event_v0_0_1(slot, transaction)
-            },
+            }
             ReplicaTransactionInfoVersions::V0_0_2(transaction) => {
                 Self::build_transaction_event_v0_0_2(slot, transaction)
-            },
+            }
         }
     }
     fn build_transaction_event_v0_0_1(
@@ -416,7 +436,7 @@ impl KafkaPlugin {
         // TODO(thlorenz): exact copy of build_transaction_event_v0_0_2
         // 1. add extra property (pub index: usize) info to event
         // 2. find a way to minimize code duplication (or don't support v0_0_1 transactions)
-        
+
         let transaction_status_meta = transaction.transaction_status_meta;
         let signature = transaction.signature;
         let is_vote = transaction.is_vote;

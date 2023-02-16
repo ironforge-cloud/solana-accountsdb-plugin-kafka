@@ -20,13 +20,11 @@ mod filter;
 mod plugin;
 mod publisher;
 
-pub use {
-    config::{Config, Producer},
-    event::*,
-    filter::Filter,
-    plugin::KafkaPlugin,
-    publisher::Publisher,
-};
+pub use config::{Config, Producer};
+pub use event::*;
+pub use filter::Filter;
+pub use plugin::KafkaPlugin;
+pub use publisher::Publisher;
 
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
