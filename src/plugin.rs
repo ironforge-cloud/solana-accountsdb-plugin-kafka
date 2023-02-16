@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use solana_geyser_plugin_interface::geyser_plugin_interface::ReplicaAccountInfoV2;
+
 use {
     crate::*,
     log::info,
     rdkafka::util::get_rdkafka_version,
     simple_error::simple_error,
     solana_geyser_plugin_interface::geyser_plugin_interface::{
-        GeyserPlugin, GeyserPluginError as PluginError, ReplicaAccountInfo,
-        ReplicaAccountInfoVersions, ReplicaTransactionInfoVersions, Result as PluginResult,
-        SlotStatus as PluginSlotStatus,
+        GeyserPlugin, GeyserPluginError as PluginError, ReplicaAccountInfoVersions,
+        ReplicaTransactionInfoVersions, Result as PluginResult, SlotStatus as PluginSlotStatus,
     },
     std::fmt::{Debug, Formatter},
 };
@@ -100,6 +101,11 @@ impl GeyserPlugin for KafkaPlugin {
             .get_allowlist()
             .update_from_http_if_needed_async();
 
+        let signature_bytes = info
+            .txn_signature
+            .map(|x| std::convert::Into::<[u8; 64]>::into(*x))
+            .map(|x| x.to_vec());
+
         let event = UpdateAccountEvent {
             slot,
             pubkey: info.pubkey.to_vec(),
@@ -109,6 +115,7 @@ impl GeyserPlugin for KafkaPlugin {
             rent_epoch: info.rent_epoch,
             data: info.data.to_vec(),
             write_version: info.write_version,
+            txn_signature: signature_bytes.unwrap_or_default(),
         };
 
         let publisher = self.unwrap_publisher();
@@ -178,9 +185,10 @@ impl KafkaPlugin {
         self.filter.as_ref().expect("filter is unavailable")
     }
 
-    fn unwrap_update_account(account: ReplicaAccountInfoVersions) -> &ReplicaAccountInfo {
+    fn unwrap_update_account(account: ReplicaAccountInfoVersions) -> &ReplicaAccountInfoV2 {
         match account {
-            ReplicaAccountInfoVersions::V0_0_1(info) => info,
+            ReplicaAccountInfoVersions::V0_0_1(_info) => panic!("only v0.0.2 is supported"),
+            ReplicaAccountInfoVersions::V0_0_2(info) => info,
         }
     }
 
