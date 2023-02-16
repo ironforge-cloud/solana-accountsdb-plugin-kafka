@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use solana_geyser_plugin_interface::geyser_plugin_interface::ReplicaAccountInfoV2;
+use solana_geyser_plugin_interface::geyser_plugin_interface::{
+    ReplicaAccountInfoV2, ReplicaTransactionInfo,
+};
 
 use {
     crate::*,
@@ -232,7 +234,18 @@ impl KafkaPlugin {
         slot: u64,
         transaction: ReplicaTransactionInfoVersions,
     ) -> TransactionEvent {
-        let ReplicaTransactionInfoVersions::V0_0_1(transaction) = transaction;
+        match transaction {
+            ReplicaTransactionInfoVersions::V0_0_1(transaction) => {
+                Self::build_transaction_event_v0_0_1(slot, transaction)
+            }
+            _ => todo!(),
+        }
+    }
+
+    fn build_transaction_event_v0_0_1(
+        slot: u64,
+        transaction: &ReplicaTransactionInfo,
+    ) -> TransactionEvent {
         let transaction_status_meta = transaction.transaction_status_meta;
         let signature = transaction.signature;
         let is_vote = transaction.is_vote;
@@ -312,19 +325,19 @@ impl KafkaPlugin {
                     message_payload: Some(match transaction.message() {
                         solana_program::message::SanitizedMessage::Legacy(lv) => {
                             sanitized_message::MessagePayload::Legacy(LegacyMessage {
-                                header: Some(Self::build_message_header(&lv.header)),
+                                header: Some(Self::build_message_header(&lv.message.header)),
                                 account_keys: lv
-                                    .account_keys
-                                    .clone()
-                                    .into_iter()
+                                    .account_keys()
+                                    .iter()
                                     .map(|k| k.as_ref().into())
                                     .collect(),
                                 instructions: lv
+                                    .message
                                     .instructions
                                     .iter()
                                     .map(Self::build_compiled_instruction)
                                     .collect(),
-                                recent_block_hash: lv.recent_blockhash.as_ref().into(),
+                                recent_block_hash: lv.message.recent_blockhash.as_ref().into(),
                             })
                         }
                         solana_program::message::SanitizedMessage::V0(v0) => {
