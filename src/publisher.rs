@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use log::error;
+
 use {
     crate::*,
     prost::Message,
@@ -77,6 +79,8 @@ impl Publisher {
 
 impl Drop for Publisher {
     fn drop(&mut self) {
-        self.producer.flush(self.shutdown_timeout);
+        if let Err(e) = self.producer.flush(self.shutdown_timeout) {
+            error!("Failed to flush producer: {}", e);
+        }
     }
 }
