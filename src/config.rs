@@ -12,19 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use {
-    rdkafka::{
-        config::FromClientConfig,
-        error::KafkaResult,
-        producer::{DefaultProducerContext, ThreadedProducer},
-        ClientConfig,
-    },
-    serde::Deserialize,
-    solana_geyser_plugin_interface::geyser_plugin_interface::{
-        GeyserPluginError, Result as PluginResult,
-    },
-    std::{collections::HashMap, fs::File, path::Path},
+use rdkafka::{
+    config::FromClientConfig,
+    error::KafkaResult,
+    producer::{DefaultProducerContext, ThreadedProducer},
+    ClientConfig,
 };
+use serde::Deserialize;
+use solana_geyser_plugin_interface::geyser_plugin_interface::{
+    GeyserPluginError, Result as PluginResult,
+};
+use std::{collections::HashMap, fs::File, path::Path};
 
 /// Plugin config.
 #[derive(Deserialize)]
@@ -85,8 +83,9 @@ impl Config {
     /// Read plugin from JSON file.
     pub fn read_from<P: AsRef<Path>>(config_path: P) -> PluginResult<Self> {
         let file = File::open(config_path)?;
-        let mut this: Self = serde_json::from_reader(file)
-            .map_err(|e| GeyserPluginError::ConfigFileReadError { msg: e.to_string() })?;
+        let mut this: Self = serde_json::from_reader(file).map_err(|e| {
+            GeyserPluginError::ConfigFileReadError { msg: e.to_string() }
+        })?;
         this.fill_defaults();
         Ok(this)
     }

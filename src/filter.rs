@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::{Arc, Mutex};
-use {
-    crate::*,
-    solana_geyser_plugin_interface::geyser_plugin_interface::GeyserPluginError as PluginError,
-    solana_geyser_plugin_interface::geyser_plugin_interface::Result as PluginResult,
-    solana_program::pubkey::Pubkey,
-    std::{collections::HashSet, str::FromStr},
+use crate::*;
+use solana_geyser_plugin_interface::geyser_plugin_interface::{
+    GeyserPluginError as PluginError, Result as PluginResult,
+};
+use solana_program::pubkey::Pubkey;
+use std::{
+    collections::HashSet,
+    str::FromStr,
+    sync::{Arc, Mutex},
 };
 
 pub struct Filter {
@@ -109,7 +111,9 @@ impl Allowlist {
         if !config.program_allowlist_url.is_empty() {
             let mut out = Self::new_from_http(
                 &config.program_allowlist_url.clone(),
-                std::time::Duration::from_secs(config.program_allowlist_expiry_sec),
+                std::time::Duration::from_secs(
+                    config.program_allowlist_expiry_sec,
+                ),
             )
             .unwrap();
 
@@ -123,7 +127,9 @@ impl Allowlist {
         } else {
             Ok(Self {
                 list: Arc::new(Mutex::new(HashSet::new())),
-                http_last_updated: Arc::new(Mutex::new(std::time::Instant::now())),
+                http_last_updated: Arc::new(Mutex::new(
+                    std::time::Instant::now(),
+                )),
                 http_url: "".to_string(),
                 http_update_interval: std::time::Duration::from_secs(0),
                 http_updater_one: Arc::new(Mutex::new(())),
@@ -204,16 +210,14 @@ impl Allowlist {
             Err(ureq::Error::Status(code, _response)) => {
                 return Err(PluginError::Custom(Box::new(
                     simple_error::SimpleError::new(format!(
-                        "Failed to fetch allowlist from remote server: status {}",
-                        code
+                        "Failed to fetch allowlist from remote server: status {code}"
                     )),
                 )));
             }
             Err(e) => {
                 return Err(PluginError::Custom(Box::new(
                     simple_error::SimpleError::new(format!(
-                        "Failed to fetch allowlist from remote server: status {}",
-                        e
+                        "Failed to fetch allowlist from remote server: status {e}"
                     )),
                 )));
             }
@@ -294,7 +298,10 @@ impl Allowlist {
         }
     }
 
-    pub fn new_from_http(url: &str, interval: std::time::Duration) -> PluginResult<Self> {
+    pub fn new_from_http(
+        url: &str,
+        interval: std::time::Duration,
+    ) -> PluginResult<Self> {
         let mut interval = interval;
         if interval < std::time::Duration::from_secs(1) {
             interval = std::time::Duration::from_secs(1);
@@ -362,7 +369,8 @@ mod tests {
             ..Config::default()
         };
 
-        let allowlist = Allowlist::new_from_vec(config.program_allowlist).unwrap();
+        let allowlist =
+            Allowlist::new_from_vec(config.program_allowlist).unwrap();
         assert_eq!(allowlist.len(), 2);
 
         assert!(allowlist.wants_program(
@@ -393,9 +401,15 @@ mod tests {
             .create();
 
         let config = Config {
-            program_allowlist_url: [mockito::server_url(), "/allowlist.txt".to_owned()].join(""),
+            program_allowlist_url: [
+                mockito::server_url(),
+                "/allowlist.txt".to_owned(),
+            ]
+            .join(""),
             program_allowlist_expiry_sec: 3,
-            program_allowlist: vec!["WormT3McKhFJ2RkiGpdw9GKvNCrB2aB54gb2uV9MfQC".to_owned()],
+            program_allowlist: vec![
+                "WormT3McKhFJ2RkiGpdw9GKvNCrB2aB54gb2uV9MfQC".to_owned(),
+            ],
             ..Config::default()
         };
 
@@ -437,9 +451,11 @@ mod tests {
             assert_eq!(allowlist.len(), 1);
 
             assert!(allowlist.wants_program(
-                &Pubkey::from_str("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin")
-                    .unwrap()
-                    .to_bytes()
+                &Pubkey::from_str(
+                    "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
+                )
+                .unwrap()
+                .to_bytes()
             ));
         }
         {
@@ -449,16 +465,18 @@ mod tests {
                 .with_body("{\"programAllowlist\":[]}")
                 .create();
             let last_updated = allowlist.get_last_updated();
-            println!("last_updated: {:?}", last_updated);
+            println!("last_updated: {last_updated:?}");
             allowlist.update_from_http().unwrap();
             assert_ne!(allowlist.get_last_updated(), last_updated);
             assert_eq!(allowlist.len(), 0);
             println!("last_updated: {:?}", allowlist.get_last_updated());
 
             assert!(allowlist.wants_program(
-                &Pubkey::from_str("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin")
-                    .unwrap()
-                    .to_bytes()
+                &Pubkey::from_str(
+                    "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
+                )
+                .unwrap()
+                .to_bytes()
             ));
         }
         {
@@ -483,20 +501,26 @@ mod tests {
             assert_ne!(allowlist.get_last_updated(), last_updated);
 
             assert!(allowlist.wants_program(
-                &Pubkey::from_str("Sysvar1111111111111111111111111111111111111")
-                    .unwrap()
-                    .to_bytes()
+                &Pubkey::from_str(
+                    "Sysvar1111111111111111111111111111111111111"
+                )
+                .unwrap()
+                .to_bytes()
             ));
             assert!(allowlist.wants_program(
-                &Pubkey::from_str("Vote111111111111111111111111111111111111111")
-                    .unwrap()
-                    .to_bytes()
+                &Pubkey::from_str(
+                    "Vote111111111111111111111111111111111111111"
+                )
+                .unwrap()
+                .to_bytes()
             ));
             // negative test
             assert!(!allowlist.wants_program(
-                &Pubkey::from_str("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin")
-                    .unwrap()
-                    .to_bytes()
+                &Pubkey::from_str(
+                    "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
+                )
+                .unwrap()
+                .to_bytes()
             ));
 
             std::thread::sleep(std::time::Duration::from_secs(3));
